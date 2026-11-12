@@ -1,0 +1,11 @@
+target/
+bin/
+*.class
+*.jar
+*.db
+*.sqlite
+.idea/
+*.iml
+.vscode/
+student_roster.csv
+.DS_Store

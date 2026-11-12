@@ -1,0 +1,1315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Management System | Tri-Portal Architecture</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- QR Code Generator Lib -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <style>
+        .portal-card { box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.3); }
+        @keyframes scaleUp { from { transform: scale(0.96); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .animate-scale-up { animation: scaleUp 0.2s ease-out forwards; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-800 min-h-screen antialiased flex flex-col selection:bg-blue-600 selection:text-white">
+
+    <!-- Global Top Bar -->
+    <header class="bg-slate-900 border-b border-slate-800 text-white sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="returnToPortalPicker()">
+                <div class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white text-lg font-bold shadow-md shadow-blue-500/20">
+                    <i class="fa-solid fa-graduation-cap"></i>
+                </div>
+                <div>
+                    <h1 class="font-extrabold text-lg tracking-tight text-white">Apex Institute of Technology</h1>
+                    <p class="text-[10px] text-blue-300 font-medium">Enterprise Student Management Information System (SMIS)</p>
+                </div>
+            </div>
+
+            <!-- Active Session User Pill & Logout -->
+            <div id="activeSessionBar" class="hidden flex items-center space-x-3 text-xs">
+                <span id="sessionRolePill" class="px-3 py-1 rounded-full font-bold"></span>
+                <span id="sessionUserLabel" class="text-slate-300 hidden sm:inline"></span>
+                <button onclick="handleLogout()" class="px-3 py-1.5 bg-slate-800 hover:bg-rose-900/40 text-rose-300 border border-rose-500/30 rounded-xl font-bold transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                    <span>Sign Out</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Floating Toast Notification System -->
+    <div id="toastContainer" class="fixed bottom-6 right-6 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+
+    <!-- Main Dynamic Container -->
+    <main class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full flex flex-col justify-center">
+
+        <!-- ================= VIEW 1: PORTAL PICKER & UNIFIED LOGIN ================= -->
+        <section id="viewLoginGateway" class="max-w-4xl mx-auto w-full my-auto space-y-8 animate-scale-up">
+            <div class="text-center space-y-2">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 text-xs font-bold uppercase tracking-wider">
+                    <i class="fa-solid fa-shield-halved"></i>
+                    <span>Multi-Role Role-Based Access Control (RBAC)</span>
+                </div>
+                <h2 class="text-3xl sm:text-4xl font-black text-white">Select Academic Access Portal</h2>
+                <p class="text-xs sm:text-sm text-slate-400 max-w-lg mx-auto">
+                    Choose your designated role to enter the secure portal. Administrative access is strictly protected with Password & 2FA Email OTP verification.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Portal 1: Student Login Card -->
+                <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 hover:border-blue-500/50 transition-all flex flex-col justify-between group shadow-xl">
+                    <div>
+                        <div class="w-12 h-12 rounded-2xl bg-blue-500/10 text-blue-400 flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition">
+                            <i class="fa-solid fa-user-graduate"></i>
+                        </div>
+                        <h3 class="text-xl font-black text-white mb-1">Student Portal</h3>
+                        <p class="text-xs text-slate-400 leading-relaxed mb-6">
+                            For enrolled students to review their academic records, view department status, and securely submit tuition fees via UPI QR.
+                        </p>
+                    </div>
+
+                    <form onsubmit="handleStudentLogin(event)" class="space-y-3 text-xs">
+                        <div>
+                            <label class="block font-bold text-slate-400 uppercase mb-1">Student Roll No (Login ID)</label>
+                            <input type="text" id="studentLoginId" required placeholder="e.g. BCA2026-001" class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white font-mono font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-400 uppercase mb-1">Password</label>
+                            <input type="password" id="studentPassword" required placeholder="••••••••" class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+                        </div>
+                        <div class="p-2.5 bg-slate-950/80 rounded-xl text-[11px] text-slate-400">
+                            Demo Student: <strong class="text-blue-400 font-mono">BCA2026-001</strong> / <strong class="text-blue-400 font-mono">pass123</strong>
+                        </div>
+                        <button type="submit" class="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold transition shadow-lg shadow-blue-500/25">
+                            Enter Student Portal
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Portal 2: Staff / Employee Portal (With Hidden Admin 2FA Gateway) -->
+                <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 hover:border-amber-500/50 transition-all flex flex-col justify-between group shadow-xl">
+                    <div>
+                        <div class="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-400 flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition">
+                            <i class="fa-solid fa-id-badge"></i>
+                        </div>
+                        <h3 class="text-xl font-black text-white mb-1">Employee & Staff Portal</h3>
+                        <p class="text-xs text-slate-400 leading-relaxed mb-6">
+                            For authorized academic counselors and office staff to manage admissions, collect fees with QR, and update student profiles.
+                        </p>
+                    </div>
+
+                    <form onsubmit="handleEmployeeLogin(event)" class="space-y-3 text-xs">
+                        <div>
+                            <label class="block font-bold text-slate-400 uppercase mb-1">Staff ID / Admin Portal ID</label>
+                            <input type="text" id="employeeLoginId" required placeholder="e.g. EMP-101 or admin" class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white font-mono font-bold focus:ring-2 focus:ring-amber-500 focus:outline-none" />
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-400 uppercase mb-1">Staff Password</label>
+                            <input type="password" id="employeePassword" required placeholder="••••••••" class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white font-mono focus:ring-2 focus:ring-amber-500 focus:outline-none" />
+                        </div>
+                        <div class="p-2.5 bg-slate-950/80 rounded-xl text-[11px] text-slate-400">
+                            Demo Staff: <strong class="text-amber-400 font-mono">EMP-101</strong> / <strong class="text-amber-400 font-mono">staff123</strong><br/>
+                            <span class="text-[10px] text-slate-500">Admin uses this gateway with: admin / admin123 (triggers 2FA Email OTP)</span>
+                        </div>
+                        <button type="submit" class="w-full py-3 bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-xl font-bold transition shadow-lg shadow-amber-500/25">
+                            Authenticate Staff Session
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= VIEW 2: STUDENT PORTAL (RESTRICTED PRIVACY) ================= -->
+        <section id="viewStudentPortal" class="hidden max-w-4xl mx-auto w-full space-y-6 animate-scale-up">
+            <!-- Student Banner -->
+            <div class="bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 border border-blue-500/30 rounded-3xl p-6 sm:p-8 text-white shadow-xl flex flex-col sm:flex-row items-center justify-between gap-6">
+                <div class="flex items-center space-x-4">
+                    <div class="w-16 h-16 rounded-2xl bg-white/20 border-2 border-white/40 flex items-center justify-center text-3xl text-white shadow-inner">
+                        <i class="fa-solid fa-user-graduate"></i>
+                    </div>
+                    <div>
+                        <span class="text-[10px] font-black uppercase tracking-wider text-blue-300 bg-white/10 px-2.5 py-0.5 rounded-full inline-block mb-1">
+                            Student Profile (Private View)
+                        </span>
+                        <h2 class="text-2xl font-black text-white" id="spName">Aarav Sharma</h2>
+                        <p class="text-xs text-blue-200 mt-0.5">Roll No: <span class="font-mono font-bold text-amber-300" id="spRoll">BCA2026-001</span> • <span id="spDept">Department of Computer Applications</span></p>
+                    </div>
+                </div>
+
+                <div class="text-center sm:text-right bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/20 min-w-[200px]">
+                    <span class="text-[10px] text-blue-200 uppercase font-bold block">Tuition Fee Status</span>
+                    <div class="text-xl font-black mt-1" id="spFeeBadge">PAID</div>
+                    <div class="text-[11px] text-blue-100 mt-1" id="spFeeAmountDue">Due: ₹0.00</div>
+                </div>
+            </div>
+
+            <!-- Profile & Academic Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Academic Credentials Box (IMMUTABLE FOR STUDENT) -->
+                <div class="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                        <h3 class="font-bold text-slate-900 text-sm">Security Credentials</h3>
+                        <span class="text-[10px] bg-slate-100 text-slate-600 font-bold px-2 py-0.5 rounded-full">Locked</span>
+                    </div>
+
+                    <div class="space-y-3 text-xs">
+                        <div>
+                            <span class="text-slate-400 block font-semibold">Student Login ID</span>
+                            <div class="font-mono font-bold text-slate-800 bg-slate-50 p-2 rounded-lg border border-slate-200 mt-0.5" id="spCredId">BCA2026-001</div>
+                        </div>
+                        <div>
+                            <span class="text-slate-400 block font-semibold">Login Password</span>
+                            <div class="font-mono font-bold text-slate-800 bg-slate-50 p-2 rounded-lg border border-slate-200 mt-0.5" id="spCredPass">•••••••• (Hidden for Security)</div>
+                        </div>
+                        <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl text-[11px] text-amber-800 leading-relaxed">
+                            <i class="fa-solid fa-lock text-amber-600 mr-1"></i>
+                            <strong>Policy Notice:</strong> Students are strictly prohibited from changing their Login ID or Password. Only authorized college employees can reset your credentials.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Academic Details -->
+                <div class="md:col-span-2 bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                        <h3 class="font-bold text-slate-900 text-sm">Academic Enrollment Information</h3>
+                        <button onclick="printStudentSlip()" class="px-3 py-1 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg text-xs font-bold transition flex items-center gap-1">
+                            <i class="fa-solid fa-print"></i>
+                            <span>Print ID Slip</span>
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4 text-xs">
+                        <div>
+                            <span class="text-slate-400 block font-semibold">Enrolled Course</span>
+                            <strong class="text-slate-900 text-sm" id="spCourse">BCA (Bachelor of Computer Applications)</strong>
+                        </div>
+                        <div>
+                            <span class="text-slate-400 block font-semibold">Current Semester</span>
+                            <strong class="text-slate-900 text-sm" id="spSemester">Semester 3</strong>
+                        </div>
+                        <div>
+                            <span class="text-slate-400 block font-semibold">Registered Email</span>
+                            <span class="text-slate-800 font-mono" id="spEmail">aarav.sharma@example.com</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-400 block font-semibold">Contact Mobile Number</span>
+                            <span class="text-slate-800 font-mono" id="spPhone">9876543210</span>
+                        </div>
+                        <div class="col-span-2">
+                            <span class="text-slate-400 block font-semibold">Permanent Residential Address</span>
+                            <span class="text-slate-700" id="spAddress">Flat 102, Gomti Nagar, Lucknow, Uttar Pradesh</span>
+                        </div>
+                    </div>
+
+                    <!-- Fee Payment Gateway Action Box -->
+                    <div class="mt-6 pt-4 border-t border-slate-100 bg-slate-50 p-4 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <div>
+                            <h4 class="font-bold text-slate-900 text-xs">Online Tuition Fee Payment Gateway</h4>
+                            <p class="text-[11px] text-slate-500">Pay university tuition fee directly with dynamic UPI QR code generator.</p>
+                        </div>
+                        <button onclick="openFeePaymentModal(currentStudentUser)" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-md shadow-emerald-500/20 whitespace-nowrap">
+                            <i class="fa-solid fa-qrcode"></i>
+                            <span>Pay Tuition Fees</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= VIEW 3: EMPLOYEE / STAFF PORTAL ================= -->
+        <section id="viewEmployeePortal" class="hidden w-full space-y-6 animate-scale-up">
+            <!-- Staff Controls Bar -->
+            <div class="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div>
+                    <div class="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-black uppercase mb-1">
+                        Employee Staff Session • Full Student Visibility
+                    </div>
+                    <h2 class="text-xl font-black text-slate-900">Student Enrollment & Fees Management</h2>
+                    <p class="text-xs text-slate-500">All students' credentials, departments, and fees are accessible to staff.</p>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2">
+                    <button onclick="openAddStudentModal()" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-md shadow-blue-500/20">
+                        <i class="fa-solid fa-user-plus"></i>
+                        <span>+ Register Student</span>
+                    </button>
+                    <button onclick="exportToCSV()" class="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-file-csv"></i>
+                        <span>Export CSV</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Filters Bar (Department, Fee, Search) -->
+            <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-3 text-xs">
+                <div class="flex flex-wrap items-center gap-2">
+                    <span class="font-bold text-slate-500 uppercase text-[10px]">Filter Department:</span>
+                    <select id="empFilterDept" onchange="renderEmployeeTable()" class="px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-xl font-semibold text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        <option value="All">All Departments</option>
+                        <option value="Computer Applications">Computer Applications (BCA)</option>
+                        <option value="Management Studies">Management Studies (BBA)</option>
+                        <option value="Commerce & Accounts">Commerce & Accounts (B.Com)</option>
+                        <option value="Information Technology">Information Technology (MCA)</option>
+                    </select>
+
+                    <span class="font-bold text-slate-500 uppercase text-[10px] ml-2">Fee Status:</span>
+                    <select id="empFilterFee" onchange="renderEmployeeTable()" class="px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-xl font-semibold text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        <option value="All">All Statuses</option>
+                        <option value="PAID">PAID</option>
+                        <option value="DUE">DUE</option>
+                    </select>
+                </div>
+
+                <div class="relative w-full sm:w-64">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
+                    <input
+                        type="text"
+                        id="empSearchInput"
+                        placeholder="Search student by Roll / Name..."
+                        oninput="renderEmployeeTable()"
+                        class="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    />
+                </div>
+            </div>
+
+            <!-- Employee Master Students Table -->
+            <div class="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm">
+                <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+                    <h3 class="font-bold text-slate-900 text-sm">Active Students Roster</h3>
+                    <span class="text-xs text-slate-500" id="empTableCount">Showing 5 Students</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs border-collapse">
+                        <thead class="bg-slate-50 text-slate-600 font-bold border-b border-slate-200 uppercase text-[11px]">
+                            <tr>
+                                <th class="py-3 px-4">Roll No</th>
+                                <th class="py-3 px-4">Student Name</th>
+                                <th class="py-3 px-4">Department & Course</th>
+                                <th class="py-3 px-4">Student Credentials (ID / Password)</th>
+                                <th class="py-3 px-4">Contact & Email</th>
+                                <th class="py-3 px-4">Fee Status</th>
+                                <th class="py-3 px-4 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="empStudentTableBody" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= VIEW 4: ADMIN MASTER CONSOLE (OTP VERIFIED) ================= -->
+        <section id="viewAdminPortal" class="hidden w-full space-y-6 animate-scale-up">
+            <!-- Admin Header -->
+            <div class="bg-gradient-to-r from-rose-950 via-slate-900 to-slate-950 border border-rose-500/30 text-white rounded-3xl p-6 sm:p-8 shadow-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                <div>
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30 text-[10px] font-black uppercase tracking-wider mb-2">
+                        <i class="fa-solid fa-lock"></i>
+                        <span>2FA Email OTP Verified • Super Administrator</span>
+                    </div>
+                    <h2 class="text-2xl font-black">System Administration & Audit Controller</h2>
+                    <p class="text-xs text-slate-400 mt-1">Full database authority: manage staff accounts, inspect system changes, and track employee actions.</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="openCreateEmployeeModal()" class="px-4 py-2.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-lg shadow-rose-500/25">
+                        <i class="fa-solid fa-user-shield"></i>
+                        <span>+ Authorize Employee</span>
+                    </button>
+                    <button onclick="switchTabToEmployeeView()" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 border border-slate-700">
+                        <i class="fa-solid fa-users-viewfinder"></i>
+                        <span>Open Staff Roster View</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tab Switcher for Admin (Audit Logs vs Employee Roster) -->
+            <div class="flex items-center space-x-2 border-b border-slate-800 pb-2">
+                <button onclick="switchAdminSubTab('audit')" id="btnSubTabAudit" class="px-4 py-2 rounded-xl text-xs font-bold bg-rose-600 text-white transition">
+                    <i class="fa-solid fa-clock-rotate-left mr-1"></i> Live Audit Trail (Who Changed What)
+                </button>
+                <button onclick="switchAdminSubTab('employees')" id="btnSubTabEmployees" class="px-4 py-2 rounded-xl text-xs font-bold bg-slate-900 text-slate-400 hover:text-white transition">
+                    <i class="fa-solid fa-user-tie mr-1"></i> Authorized Staff Accounts (<span id="adminEmpCount">2</span>)
+                </button>
+            </div>
+
+            <!-- Subtab 1: Audit Trail -->
+            <div id="subtabAuditSection" class="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-xl">
+                <div class="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
+                    <div>
+                        <h3 class="font-bold text-white text-sm">Database Modification Audit Trail</h3>
+                        <p class="text-[11px] text-slate-400">Chronological logging of every insert, update, fee submission, and deletion with employee identity</p>
+                    </div>
+                    <button onclick="clearAuditLogs()" class="text-xs text-rose-400 hover:underline font-bold">
+                        Clear Audit Trail
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs border-collapse">
+                        <thead class="bg-slate-950 text-slate-400 font-bold border-b border-slate-800 uppercase text-[10px]">
+                            <tr>
+                                <th class="py-3 px-4">Timestamp</th>
+                                <th class="py-3 px-4">Employee / Operator</th>
+                                <th class="py-3 px-4">Action Event</th>
+                                <th class="py-3 px-4">Target Entity</th>
+                                <th class="py-3 px-4">Audit Details & Modification Payload</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminAuditTableBody" class="divide-y divide-slate-800 text-slate-300 font-mono"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Subtab 2: Employee Accounts Management -->
+            <div id="subtabEmployeesSection" class="hidden bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-xl">
+                <div class="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
+                    <h3 class="font-bold text-white text-sm">Authorized Academic Employees</h3>
+                    <button onclick="openCreateEmployeeModal()" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-xs font-bold transition">
+                        + Add New Employee
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs border-collapse">
+                        <thead class="bg-slate-950 text-slate-400 font-bold border-b border-slate-800 uppercase text-[10px]">
+                            <tr>
+                                <th class="py-3 px-4">Employee ID</th>
+                                <th class="py-3 px-4">Staff Full Name</th>
+                                <th class="py-3 px-4">Assigned Department</th>
+                                <th class="py-3 px-4">Staff Password</th>
+                                <th class="py-3 px-4">Authorization Role</th>
+                                <th class="py-3 px-4 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminEmployeesTableBody" class="divide-y divide-slate-800 text-slate-300"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- ================= MODALS & DIALOGS ================= -->
+
+    <!-- 1. Admin 2FA Email OTP Verification Modal -->
+    <div id="adminOtpModal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-rose-500/30 rounded-3xl max-w-md w-full shadow-2xl p-6 sm:p-8 animate-scale-up text-white">
+            <div class="text-center mb-6">
+                <div class="w-14 h-14 rounded-2xl bg-rose-500/20 text-rose-400 border border-rose-500/30 flex items-center justify-center mx-auto text-2xl mb-3 shadow-inner">
+                    <i class="fa-solid fa-envelope-circle-check"></i>
+                </div>
+                <h3 class="text-xl font-black">Two-Factor Authentication</h3>
+                <p class="text-xs text-slate-400 mt-1">A one-time security OTP has been dispatched to:</p>
+                <div class="font-mono text-rose-300 text-xs font-bold mt-1">admin@citycollege.edu</div>
+            </div>
+
+            <!-- OTP Simulation Notice Box -->
+            <div class="p-4 bg-rose-950/40 border border-rose-500/20 rounded-2xl mb-6 text-xs space-y-1">
+                <span class="text-rose-400 font-bold block"><i class="fa-solid fa-key mr-1"></i> Simulated Secure Inbox:</span>
+                <p class="text-slate-300">Your current verification OTP is: <strong id="simulatedOtpDisplay" class="text-white text-base tracking-widest font-mono bg-rose-900/60 px-2 py-0.5 rounded">849201</strong></p>
+            </div>
+
+            <form onsubmit="handleVerifyAdminOtp(event)" class="space-y-4 text-xs">
+                <div>
+                    <label class="block font-bold text-slate-400 uppercase mb-2">Enter 6-Digit Email OTP</label>
+                    <input
+                        type="text"
+                        id="adminOtpInput"
+                        required
+                        maxlength="6"
+                        placeholder="6-digit code"
+                        class="w-full text-center tracking-[0.5em] text-2xl font-mono font-black py-3 bg-slate-950 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-rose-500 focus:outline-none"
+                    />
+                </div>
+                <div class="flex items-center gap-2 pt-2">
+                    <button type="button" onclick="closeAdminOtpModal()" class="w-1/2 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-bold transition">
+                        Cancel
+                    </button>
+                    <button type="submit" class="w-1/2 py-2.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl font-bold shadow-lg shadow-rose-500/25 transition">
+                        Verify & Open Console
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 2. Dynamic Fee Payment & UPI QR Code Generator Modal -->
+    <div id="feePaymentModal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-lg w-full shadow-2xl p-6 sm:p-8 animate-scale-up border border-slate-200">
+            <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-4">
+                <div>
+                    <span class="text-[10px] font-black uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">UPI Instant Settlement</span>
+                    <h3 class="text-lg font-black text-slate-900 mt-1">Submit Tuition Fee Payment</h3>
+                </div>
+                <button onclick="closeFeePaymentModal()" class="text-slate-400 hover:text-slate-600">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <div class="space-y-4 text-xs">
+                <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 flex justify-between items-center">
+                    <div>
+                        <span class="text-slate-400 block font-semibold">Student Name & Roll No</span>
+                        <strong class="text-slate-900 text-sm" id="feeTargetStudentName">Aarav Sharma</strong>
+                        <span class="text-blue-700 font-mono text-xs block" id="feeTargetStudentRoll">BCA2026-001</span>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-slate-400 block font-semibold">Current Balance</span>
+                        <span class="text-rose-600 font-black text-sm" id="feeCurrentDueText">₹25,000 Due</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-bold text-slate-700 uppercase mb-1">Fee Head</label>
+                        <select id="feeHeadSelect" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl font-semibold">
+                            <option value="Tuition Fee">Tuition Fee</option>
+                            <option value="Examination Fee">Examination Fee</option>
+                            <option value="Lab & Library Fee">Lab & Library Fee</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 uppercase mb-1">Payment Amount (₹)</label>
+                        <input
+                            type="number"
+                            id="feeAmountInput"
+                            value="25000"
+                            min="500"
+                            step="500"
+                            oninput="regenerateFeeQRCode()"
+                            class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl font-mono font-bold text-slate-900"
+                        />
+                    </div>
+                </div>
+
+                <!-- Live Generated Dynamic QR Code Display -->
+                <div class="bg-slate-950 p-6 rounded-2xl text-center text-white space-y-3">
+                    <span class="text-[11px] text-slate-400 uppercase tracking-widest block font-bold">Scan to Pay via Any UPI App</span>
+                    <div class="bg-white p-3 rounded-2xl inline-block shadow-lg">
+                        <canvas id="feeQrCanvas" class="w-44 h-44 mx-auto"></canvas>
+                    </div>
+                    <div class="text-xs">
+                        <span class="text-emerald-400 font-bold">UPI ID: fees@citycollege.edu</span>
+                        <div class="text-slate-400 text-[10px] mt-0.5">Amount encoded: ₹<span id="qrAmountDisplay">25,000</span></div>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2 pt-2">
+                    <button onclick="closeFeePaymentModal()" class="w-1/2 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold transition">
+                        Cancel
+                    </button>
+                    <button onclick="confirmFeePaymentExecution()" class="w-1/2 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold shadow-lg shadow-emerald-500/25 transition">
+                        Confirm Payment (Approve)
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Add / Edit Student Record Modal (Employee & Admin) -->
+    <div id="studentFormModal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-lg w-full shadow-2xl p-6 sm:p-8 animate-scale-up border border-slate-200">
+            <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-4">
+                <div>
+                    <h3 class="text-lg font-black text-slate-900" id="studentFormTitle">Register New Student</h3>
+                    <p class="text-xs text-slate-500">Assign roll number, department, credentials, and fee state</p>
+                </div>
+                <button onclick="closeStudentFormModal()" class="text-slate-400 hover:text-slate-600">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <form onsubmit="handleSaveStudentSubmit(event)" class="space-y-4 text-xs">
+                <input type="hidden" id="editStudentId" />
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-bold text-slate-700 uppercase mb-1">Student Roll No *</label>
+                        <input type="text" id="inputRollNo" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl font-mono font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 uppercase mb-1">Full Name *</label>
+                        <input type="text" id="inputName" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-bold text-slate-700 uppercase mb-1">Academic Department</label>
+                        <select id="inputDepartment" onchange="syncCourseWithDept()" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl font-semibold">
+                            <option value="Computer Applications">Computer Applications (BCA)</option>
+                            <option value="Management Studies">Management Studies (BBA)</option>
+                            <option value="Commerce & Accounts">Commerce & Accounts (B.Com)</option>
+                            <option value="Information Technology">Information Technology (MCA)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 uppercase mb-1">Current Semester</label>
+                        <select id="inputSemester" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl font-semibold">
+                            <option value="1">Semester 1</option>
+                            <option value="2">Semester 2</option>
+                            <option value="3" selected>Semester 3</option>
+                            <option value="4">Semester 4</option>
+                            <option value="5">Semester 5</option>
+                            <option value="6">Semester 6</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Credential Assignment (Visible to Staff) -->
+                <div class="p-3 bg-blue-50 border border-blue-200 rounded-2xl space-y-2">
+                    <span class="text-blue-900 font-bold block text-[11px]"><i class="fa-solid fa-key text-blue-600 mr-1"></i> Student Login Credentials (Managed by Staff):</span>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <span class="text-[10px] text-slate-500 font-semibold">Login ID (Roll No)</span>
+                            <input type="text" id="inputDisplayLoginId" readonly class="w-full px-2.5 py-1.5 bg-white border border-blue-300 rounded-lg font-mono font-bold text-blue-900 text-xs" />
+                        </div>
+                        <div>
+                            <span class="text-[10px] text-slate-500 font-semibold">Student Password</span>
+                            <input type="text" id="inputStudentPassword" required value="pass123" class="w-full px-2.5 py-1.5 bg-white border border-blue-300 rounded-lg font-mono font-bold text-blue-900 text-xs" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-bold text-slate-700 uppercase mb-1">Email Address *</label>
+                        <input type="email" id="inputEmail" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl" />
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 uppercase mb-1">Contact Mobile *</label>
+                        <input type="tel" id="inputPhone" required pattern="[0-9]{10}" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl font-mono" />
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-700 uppercase mb-1">Residential Address</label>
+                    <textarea id="inputAddress" rows="2" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl"></textarea>
+                </div>
+
+                <div class="flex items-center gap-2 pt-2">
+                    <button type="button" onclick="closeStudentFormModal()" class="w-1/2 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold transition">
+                        Cancel
+                    </button>
+                    <button type="submit" class="w-1/2 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-lg shadow-blue-500/25 transition">
+                        Commit Record (PreparedStatement)
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 4. Create Employee Modal (Admin Only) -->
+    <div id="createEmployeeModal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-rose-500/30 rounded-3xl max-w-md w-full shadow-2xl p-6 sm:p-8 animate-scale-up text-white">
+            <div class="flex items-center justify-between pb-4 border-b border-slate-800 mb-4">
+                <div>
+                    <h3 class="text-lg font-black">Authorize New Academic Staff</h3>
+                    <p class="text-xs text-slate-400">Issue credentials for counselors and office employees</p>
+                </div>
+                <button onclick="closeCreateEmployeeModal()" class="text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <form onsubmit="handleCreateEmployeeSubmit(event)" class="space-y-4 text-xs">
+                <div>
+                    <label class="block font-bold text-slate-400 uppercase mb-1">Employee Staff ID *</label>
+                    <input type="text" id="newEmpId" required placeholder="e.g. EMP-103" class="w-full px-3.5 py-2 bg-slate-950 border border-slate-700 rounded-xl font-mono font-bold text-white" />
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-400 uppercase mb-1">Staff Full Name *</label>
+                    <input type="text" id="newEmpName" required placeholder="e.g. Dr. Alok Mathur" class="w-full px-3.5 py-2 bg-slate-950 border border-slate-700 rounded-xl text-white font-bold" />
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-400 uppercase mb-1">Assigned Department</label>
+                    <select id="newEmpDept" class="w-full px-3.5 py-2 bg-slate-950 border border-slate-700 rounded-xl text-white font-semibold">
+                        <option value="Computer Applications">Computer Applications</option>
+                        <option value="Management Studies">Management Studies</option>
+                        <option value="Commerce & Accounts">Commerce & Accounts</option>
+                        <option value="Academic Office">Academic Office Administration</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-400 uppercase mb-1">Initial Password *</label>
+                    <input type="text" id="newEmpPass" required value="staff123" class="w-full px-3.5 py-2 bg-slate-950 border border-slate-700 rounded-xl font-mono text-white" />
+                </div>
+
+                <div class="flex items-center gap-2 pt-2">
+                    <button type="button" onclick="closeCreateEmployeeModal()" class="w-1/2 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-bold transition">
+                        Cancel
+                    </button>
+                    <button type="submit" class="w-1/2 py-2.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl font-bold shadow-lg shadow-rose-500/25 transition">
+                        Authorize Staff
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-slate-950 text-slate-500 text-xs py-6 border-t border-slate-900 text-center mt-auto">
+        Apex Institute of Technology • Department of Computer Applications • Student Information System
+    </footer>
+
+    <!-- ================= APPLICATION ENGINE LOGIC ================= -->
+    <script>
+        // Database State
+        let students = [
+            { id: 1, roll: "BCA2026-001", password: "pass123", name: "Aarav Sharma", department: "Computer Applications", course: "BCA", semester: 3, email: "aarav.sharma@example.com", phone: "9876543210", address: "Flat 102, Gomti Nagar, Lucknow", feeStatus: "PAID", feePaid: 25000, feeDue: 0 },
+            { id: 2, roll: "BCA2026-002", password: "pass123", name: "Rohan Verma", department: "Computer Applications", course: "BCA", semester: 3, email: "rohan.verma@example.com", phone: "9876543211", address: "Sector 4, Aliganj, Lucknow", feeStatus: "PAID", feePaid: 25000, feeDue: 0 },
+            { id: 3, roll: "BBA2026-015", password: "pass123", name: "Ananya Singh", department: "Management Studies", course: "BBA", semester: 3, email: "ananya.singh@example.com", phone: "9876543212", address: "Hazratganj, Lucknow", feeStatus: "PAID", feePaid: 22000, feeDue: 0 },
+            { id: 4, roll: "BCA2026-004", password: "pass123", name: "Kunal Patel", department: "Computer Applications", course: "BCA", semester: 3, email: "kunal.patel@example.com", phone: "9876543213", address: "Indira Nagar, Lucknow", feeStatus: "DUE", feePaid: 0, feeDue: 25000 },
+            { id: 5, roll: "BCOM2026-022", password: "pass123", name: "Pooja Gupta", department: "Commerce & Accounts", course: "B.COM", semester: 3, email: "pooja.gupta@example.com", phone: "9876543214", address: "Vikas Nagar, Lucknow", feeStatus: "PAID", feePaid: 18000, feeDue: 0 }
+        ];
+
+        let employees = [
+            { id: "EMP-101", name: "Prof. Rajesh Sharma", department: "Computer Applications", password: "staff123", role: "Academic Counselor" },
+            { id: "EMP-102", name: "Mrs. Sunita Verma", department: "Accounts & Finance", password: "staff123", role: "Fees Officer" }
+        ];
+
+        let auditLogs = [
+            { timestamp: "2026-11-12 10:15:20", operator: "EMP-101 (Prof. Rajesh Sharma)", action: "STUDENT_REGISTRATION", target: "BCA2026-001 (Aarav Sharma)", details: "Enrolled in Department of Computer Applications; initial password issued." },
+            { timestamp: "2026-11-12 11:20:45", operator: "EMP-102 (Mrs. Sunita Verma)", action: "FEE_COLLECTION", target: "BCA2026-001 (Aarav Sharma)", details: "Amount: ₹25,000 received via dynamic UPI QR code. Status set to PAID." },
+            { timestamp: "2026-11-12 12:05:10", operator: "EMP-101 (Prof. Rajesh Sharma)", action: "STUDENT_REGISTRATION", target: "BCA2026-004 (Kunal Patel)", details: "Enrolled in BCA; fee status recorded as DUE (₹25,000)." }
+        ];
+
+        let activeSession = null; // { role: 'STUDENT' | 'EMPLOYEE' | 'ADMIN', user: ... }
+        let currentStudentUser = null;
+        let generatedAdminOtp = "849201";
+        let targetStudentForFee = null;
+
+        // Toast Engine
+        function showToast(msg, type = "info") {
+            const container = document.getElementById("toastContainer");
+            const toast = document.createElement("div");
+            toast.className = `pointer-events-auto p-4 rounded-2xl shadow-2xl text-xs font-semibold flex items-center gap-3 animate-scale-up border max-w-sm ${
+                type === 'success' ? 'bg-slate-900 text-white border-emerald-500/50' :
+                type === 'error' ? 'bg-rose-950 text-white border-rose-500' :
+                'bg-slate-900 text-white border-slate-700'
+            }`;
+
+            toast.innerHTML = `
+                <i class="fa-solid ${type === 'success' ? 'fa-circle-check text-emerald-400' : type === 'error' ? 'fa-circle-xmark text-rose-400' : 'fa-circle-info text-blue-400'} text-base"></i>
+                <div class="flex-1">${msg}</div>
+            `;
+
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(10px)';
+                toast.style.transition = 'all 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
+        // ================= AUTHENTICATION HANDLERS =================
+
+        // 1. Student Login
+        function handleStudentLogin(e) {
+            e.preventDefault();
+            const roll = document.getElementById("studentLoginId").value.trim().toUpperCase();
+            const pass = document.getElementById("studentPassword").value.trim();
+
+            const student = students.find(s => s.roll === roll && s.password === pass);
+            if (student) {
+                activeSession = { role: 'STUDENT', user: student };
+                currentStudentUser = student;
+                renderStudentPortal(student);
+                showToast(`Welcome, ${student.name}! Accessing your private student profile.`, "success");
+            } else {
+                showToast("Invalid Student Roll No or Password. Please check credentials or contact college staff.", "error");
+            }
+        }
+
+        // 2. Staff / Admin Login Gateway
+        function handleEmployeeLogin(e) {
+            e.preventDefault();
+            const id = document.getElementById("employeeLoginId").value.trim();
+            const pass = document.getElementById("employeePassword").value.trim();
+
+            // CHECK IF ADMIN ATTEMPTS LOGIN
+            if (id.toLowerCase() === "admin" || id.toLowerCase() === "admin@citycollege.edu") {
+                if (pass === "admin123") {
+                    // Trigger Step 2: 2FA Email OTP Verification
+                    generatedAdminOtp = Math.floor(100000 + Math.random() * 900000).toString();
+                    document.getElementById("simulatedOtpDisplay").innerText = generatedAdminOtp;
+                    document.getElementById("adminOtpModal").classList.remove("hidden");
+                    showToast(`Security Email OTP dispatched to admin@citycollege.edu: [${generatedAdminOtp}]`, "info");
+                } else {
+                    showToast("Admin Authentication Failed: Incorrect password.", "error");
+                }
+                return;
+            }
+
+            // Normal Employee Login
+            const emp = employees.find(em => em.id.toUpperCase() === id.toUpperCase() && em.password === pass);
+            if (emp) {
+                activeSession = { role: 'EMPLOYEE', user: emp };
+                renderEmployeePortal(emp);
+                showToast(`Staff session authenticated: ${emp.name} (${emp.id})`, "success");
+            } else {
+                showToast("Invalid Staff ID or Password. Only authorized employees can access.", "error");
+            }
+        }
+
+        // 3. Admin 2FA Email OTP Verification
+        function handleVerifyAdminOtp(e) {
+            e.preventDefault();
+            const enteredOtp = document.getElementById("adminOtpInput").value.trim();
+
+            if (enteredOtp === generatedAdminOtp) {
+                document.getElementById("adminOtpModal").classList.add("hidden");
+                activeSession = { role: 'ADMIN', user: { name: "System Administrator", email: "admin@citycollege.edu" } };
+                renderAdminPortal();
+                showToast("2FA Email OTP Verified! Admin Master Console unlocked.", "success");
+            } else {
+                showToast("Invalid OTP! Access Denied. Check the 6-digit code sent to your email.", "error");
+            }
+        }
+
+        function closeAdminOtpModal() {
+            document.getElementById("adminOtpModal").classList.add("hidden");
+        }
+
+        // ================= PORTAL RENDERING =================
+
+        // Render Student View (Student can ONLY see their details)
+        function renderStudentPortal(student) {
+            hideAllViews();
+            document.getElementById("viewStudentPortal").classList.remove("hidden");
+
+            // Setup Header Bar
+            const bar = document.getElementById("activeSessionBar");
+            bar.classList.remove("hidden");
+            const pill = document.getElementById("sessionRolePill");
+            pill.innerText = "STUDENT PORTAL";
+            pill.className = "px-3 py-1 rounded-full font-bold bg-blue-500/20 text-blue-400 border border-blue-500/30 text-[10px]";
+            document.getElementById("sessionUserLabel").innerText = `${student.name} (${student.roll})`;
+
+            // Populate Student Details
+            document.getElementById("spName").innerText = student.name;
+            document.getElementById("spRoll").innerText = student.roll;
+            document.getElementById("spDept").innerText = `Department of ${student.department}`;
+            document.getElementById("spCourse").innerText = `${student.course} (${student.department})`;
+            document.getElementById("spSemester").innerText = `Semester ${student.semester}`;
+            document.getElementById("spEmail").innerText = student.email;
+            document.getElementById("spPhone").innerText = student.phone;
+            document.getElementById("spAddress").innerText = student.address;
+
+            // Immutable Credentials Display
+            document.getElementById("spCredId").innerText = student.roll;
+            document.getElementById("spCredPass").innerText = student.password;
+
+            // Fee Status
+            const feeBadge = document.getElementById("spFeeBadge");
+            const dueText = document.getElementById("spFeeAmountDue");
+            if (student.feeStatus === "PAID") {
+                feeBadge.innerText = "PAID IN FULL";
+                feeBadge.className = "text-xl font-black mt-1 text-emerald-400";
+                dueText.innerText = `Total Paid: ₹${student.feePaid.toLocaleString('en-IN')}`;
+            } else {
+                feeBadge.innerText = "PAYMENT DUE";
+                feeBadge.className = "text-xl font-black mt-1 text-rose-400";
+                dueText.innerText = `Balance Due: ₹${student.feeDue.toLocaleString('en-IN')}`;
+            }
+        }
+
+        // Render Employee / Staff View
+        function renderEmployeePortal(emp) {
+            hideAllViews();
+            document.getElementById("viewEmployeePortal").classList.remove("hidden");
+
+            // Setup Header Bar
+            const bar = document.getElementById("activeSessionBar");
+            bar.classList.remove("hidden");
+            const pill = document.getElementById("sessionRolePill");
+            pill.innerText = "STAFF CONSOLE";
+            pill.className = "px-3 py-1 rounded-full font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[10px]";
+            document.getElementById("sessionUserLabel").innerText = `${emp.name} (${emp.id})`;
+
+            renderEmployeeTable();
+        }
+
+        // Render Table in Employee View
+        function renderEmployeeTable() {
+            const tbody = document.getElementById("empStudentTableBody");
+            tbody.innerHTML = "";
+
+            const deptFilter = document.getElementById("empFilterDept").value;
+            const feeFilter = document.getElementById("empFilterFee").value;
+            const searchVal = document.getElementById("empSearchInput").value.trim().toLowerCase();
+
+            const filtered = students.filter(s => {
+                const matchDept = (deptFilter === "All" || s.department.includes(deptFilter));
+                const matchFee = (feeFilter === "All" || s.feeStatus === feeFilter);
+                const matchSearch = s.roll.toLowerCase().includes(searchVal) ||
+                                    s.name.toLowerCase().includes(searchVal) ||
+                                    s.email.toLowerCase().includes(searchVal);
+                return matchDept && matchFee && matchSearch;
+            });
+
+            document.getElementById("empTableCount").innerText = `Showing ${filtered.length} of ${students.length} Students`;
+
+            filtered.forEach(s => {
+                const tr = document.createElement("tr");
+                tr.className = "hover:bg-slate-50/80 transition";
+                tr.innerHTML = `
+                    <td class="py-3 px-4 font-mono font-bold text-blue-700">${s.roll}</td>
+                    <td class="py-3 px-4 font-bold text-slate-900">${s.name}</td>
+                    <td class="py-3 px-4">
+                        <span class="font-semibold text-slate-800">${s.course} (Sem ${s.semester})</span>
+                        <div class="text-[10px] text-slate-400">${s.department}</div>
+                    </td>
+                    <td class="py-3 px-4">
+                        <div class="bg-blue-50 text-blue-900 font-mono text-[11px] px-2.5 py-1 rounded-lg border border-blue-200 inline-block">
+                            ID: <strong>${s.roll}</strong> • Pass: <strong class="text-rose-600">${s.password}</strong>
+                        </div>
+                    </td>
+                    <td class="py-3 px-4 text-slate-600 font-mono text-[11px]">
+                        <div>${s.phone}</div>
+                        <div class="text-slate-400 text-[10px]">${s.email}</div>
+                    </td>
+                    <td class="py-3 px-4">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase ${
+                            s.feeStatus === 'PAID' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
+                        }">
+                            ${s.feeStatus}
+                        </span>
+                        <div class="text-[10px] text-slate-400 mt-0.5">₹${s.feePaid.toLocaleString('en-IN')} paid</div>
+                    </td>
+                    <td class="py-3 px-4 text-right space-x-1">
+                        <button onclick="openFeePaymentModalByRoll('${s.roll}')" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[11px] font-bold transition shadow-sm" title="Collect Fees with QR">
+                            <i class="fa-solid fa-qrcode mr-1"></i> Fee QR
+                        </button>
+                        <button onclick="openEditStudentModal(${s.id})" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-[11px] font-bold transition" title="Edit Student">
+                            <i class="fa-solid fa-pen-to-square"></i>
+                        </button>
+                        ${activeSession && activeSession.role === 'ADMIN' ? `
+                            <button onclick="deleteStudentAdmin(${s.id})" class="px-2.5 py-1 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-lg text-[11px] font-bold transition" title="Delete Student">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        ` : ''}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Render Admin Portal View
+        function renderAdminPortal() {
+            hideAllViews();
+            document.getElementById("viewAdminPortal").classList.remove("hidden");
+
+            // Setup Header Bar
+            const bar = document.getElementById("activeSessionBar");
+            bar.classList.remove("hidden");
+            const pill = document.getElementById("sessionRolePill");
+            pill.innerText = "ADMIN MASTER CONSOLE";
+            pill.className = "px-3 py-1 rounded-full font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30 text-[10px]";
+            document.getElementById("sessionUserLabel").innerText = "Super Administrator";
+
+            renderAuditLogsTable();
+            renderAdminEmployeesTable();
+        }
+
+        function renderAuditLogsTable() {
+            const tbody = document.getElementById("adminAuditTableBody");
+            tbody.innerHTML = "";
+
+            auditLogs.slice().reverse().forEach(log => {
+                const tr = document.createElement("tr");
+                tr.className = "hover:bg-slate-800/40 transition text-xs";
+                tr.innerHTML = `
+                    <td class="py-3 px-4 text-slate-400">${log.timestamp}</td>
+                    <td class="py-3 px-4 font-bold text-amber-400">${log.operator}</td>
+                    <td class="py-3 px-4">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-black ${
+                            log.action.includes('REGISTRATION') ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' :
+                            log.action.includes('FEE') ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' :
+                            log.action.includes('UPDATE') ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' :
+                            'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                        }">
+                            ${log.action}
+                        </span>
+                    </td>
+                    <td class="py-3 px-4 font-bold text-white">${log.target}</td>
+                    <td class="py-3 px-4 text-slate-300 max-w-[280px] truncate" title="${log.details}">${log.details}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderAdminEmployeesTable() {
+            const tbody = document.getElementById("adminEmployeesTableBody");
+            tbody.innerHTML = "";
+            document.getElementById("adminEmpCount").innerText = employees.length;
+
+            employees.forEach(emp => {
+                const tr = document.createElement("tr");
+                tr.className = "hover:bg-slate-800/40 transition text-xs";
+                tr.innerHTML = `
+                    <td class="py-3 px-4 font-mono font-bold text-amber-400">${emp.id}</td>
+                    <td class="py-3 px-4 font-bold text-white">${emp.name}</td>
+                    <td class="py-3 px-4 text-slate-300">${emp.department}</td>
+                    <td class="py-3 px-4 font-mono text-rose-300">${emp.password}</td>
+                    <td class="py-3 px-4">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-300 border border-amber-500/20">
+                            ${emp.role}
+                        </span>
+                    </td>
+                    <td class="py-3 px-4 text-right">
+                        <button onclick="removeEmployee('${emp.id}')" class="text-rose-400 hover:text-rose-300 text-xs font-bold">
+                            Revoke Access
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function switchAdminSubTab(tab) {
+            document.getElementById("subtabAuditSection").classList.add("hidden");
+            document.getElementById("subtabEmployeesSection").classList.add("hidden");
+
+            document.getElementById("btnSubTabAudit").className = "px-4 py-2 rounded-xl text-xs font-bold bg-slate-900 text-slate-400 hover:text-white transition";
+            document.getElementById("btnSubTabEmployees").className = "px-4 py-2 rounded-xl text-xs font-bold bg-slate-900 text-slate-400 hover:text-white transition";
+
+            if (tab === 'audit') {
+                document.getElementById("subtabAuditSection").classList.remove("hidden");
+                document.getElementById("btnSubTabAudit").className = "px-4 py-2 rounded-xl text-xs font-bold bg-rose-600 text-white transition";
+            } else {
+                document.getElementById("subtabEmployeesSection").classList.remove("hidden");
+                document.getElementById("btnSubTabEmployees").className = "px-4 py-2 rounded-xl text-xs font-bold bg-rose-600 text-white transition";
+            }
+        }
+
+        function switchTabToEmployeeView() {
+            hideAllViews();
+            document.getElementById("viewEmployeePortal").classList.remove("hidden");
+            renderEmployeeTable();
+        }
+
+        function recordAuditLog(action, target, details) {
+            const operator = activeSession ? (activeSession.role === 'ADMIN' ? 'SUPER_ADMIN' : `${activeSession.user.id} (${activeSession.user.name})`) : 'SYSTEM';
+            const logEntry = {
+                timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
+                operator: operator,
+                action: action,
+                target: target,
+                details: details
+            };
+            auditLogs.push(logEntry);
+        }
+
+        function clearAuditLogs() {
+            if (confirm("Are you sure you want to clear system audit trail?")) {
+                auditLogs = [];
+                renderAuditLogsTable();
+                showToast("Audit logs cleared.", "info");
+            }
+        }
+
+        // ================= FEE PAYMENT & DYNAMIC UPI QR GENERATION =================
+
+        function openFeePaymentModalByRoll(roll) {
+            const st = students.find(s => s.roll === roll);
+            if (st) openFeePaymentModal(st);
+        }
+
+        function openFeePaymentModal(student) {
+            targetStudentForFee = student;
+            document.getElementById("feeTargetStudentName").innerText = student.name;
+            document.getElementById("feeTargetStudentRoll").innerText = student.roll;
+            document.getElementById("feeCurrentDueText").innerText = student.feeStatus === 'PAID' ? '₹0.00 Due (Paid)' : `₹${student.feeDue.toLocaleString('en-IN')} Due`;
+
+            const defaultAmt = student.feeDue > 0 ? student.feeDue : 15000;
+            document.getElementById("feeAmountInput").value = defaultAmt;
+
+            regenerateFeeQRCode();
+            document.getElementById("feePaymentModal").classList.remove("hidden");
+        }
+
+        function closeFeePaymentModal() {
+            document.getElementById("feePaymentModal").classList.add("hidden");
+        }
+
+        function regenerateFeeQRCode() {
+            if (!targetStudentForFee) return;
+            const amt = parseFloat(document.getElementById("feeAmountInput").value) || 0;
+            const head = document.getElementById("feeHeadSelect").value;
+            document.getElementById("qrAmountDisplay").innerText = amt.toLocaleString('en-IN');
+
+            const upiPayload = `upi://pay?pa=fees@citycollege.edu&pn=City+College+of+Management&am=${amt}&cu=INR&tn=${targetStudentForFee.roll}_${head.replace(/\s+/g, '')}`;
+
+            const canvas = document.getElementById("feeQrCanvas");
+            if (canvas && window.QRCode) {
+                QRCode.toCanvas(canvas, upiPayload, { width: 176, margin: 1, color: { dark: '#0f172a', light: '#ffffff' } });
+            }
+        }
+
+        function confirmFeePaymentExecution() {
+            if (!targetStudentForFee) return;
+            const amt = parseFloat(document.getElementById("feeAmountInput").value) || 0;
+            const head = document.getElementById("feeHeadSelect").value;
+
+            targetStudentForFee.feePaid += amt;
+            targetStudentForFee.feeDue = Math.max(0, targetStudentForFee.feeDue - amt);
+            targetStudentForFee.feeStatus = targetStudentForFee.feeDue === 0 ? "PAID" : "PARTIAL";
+
+            // Log Audit Entry
+            recordAuditLog("FEE_COLLECTION", `${targetStudentForFee.roll} (${targetStudentForFee.name})`, `Collected ₹${amt.toLocaleString('en-IN')} for ${head} via Dynamic UPI QR.`);
+
+            closeFeePaymentModal();
+
+            if (activeSession && activeSession.role === 'STUDENT') {
+                renderStudentPortal(targetStudentForFee);
+            } else if (activeSession && activeSession.role === 'EMPLOYEE') {
+                renderEmployeeTable();
+            } else if (activeSession && activeSession.role === 'ADMIN') {
+                renderAuditLogsTable();
+            }
+
+            showToast(`Fee payment of ₹${amt.toLocaleString('en-IN')} successfully verified and ledger updated!`, "success");
+        }
+
+        // ================= STUDENT CRUD MODALS (EMPLOYEE & ADMIN) =================
+
+        function openAddStudentModal() {
+            document.getElementById("editStudentId").value = "";
+            document.getElementById("studentFormTitle").innerText = "Register New Student (Staff Portal)";
+            document.getElementById("inputRollNo").value = `BCA2026-00${students.length + 1}`;
+            document.getElementById("inputRollNo").readOnly = false;
+            document.getElementById("inputDisplayLoginId").value = document.getElementById("inputRollNo").value;
+            document.getElementById("inputName").value = "";
+            document.getElementById("inputDepartment").value = "Computer Applications";
+            document.getElementById("inputSemester").value = "3";
+            document.getElementById("inputStudentPassword").value = "pass123";
+            document.getElementById("inputEmail").value = "";
+            document.getElementById("inputPhone").value = "";
+            document.getElementById("inputAddress").value = "";
+
+            document.getElementById("inputRollNo").oninput = (e) => {
+                document.getElementById("inputDisplayLoginId").value = e.target.value.trim().toUpperCase();
+            };
+
+            document.getElementById("studentFormModal").classList.remove("hidden");
+        }
+
+        function openEditStudentModal(studentId) {
+            const st = students.find(s => s.id === studentId);
+            if (!st) return;
+
+            document.getElementById("editStudentId").value = st.id;
+            document.getElementById("studentFormTitle").innerText = `Update Student Profile: ${st.roll}`;
+            document.getElementById("inputRollNo").value = st.roll;
+            document.getElementById("inputRollNo").readOnly = true; // Primary Key immutable
+            document.getElementById("inputDisplayLoginId").value = st.roll;
+            document.getElementById("inputName").value = st.name;
+            document.getElementById("inputDepartment").value = st.department;
+            document.getElementById("inputSemester").value = st.semester;
+            document.getElementById("inputStudentPassword").value = st.password;
+            document.getElementById("inputEmail").value = st.email;
+            document.getElementById("inputPhone").value = st.phone;
+            document.getElementById("inputAddress").value = st.address;
+
+            document.getElementById("studentFormModal").classList.remove("hidden");
+        }
+
+        function closeStudentFormModal() {
+            document.getElementById("studentFormModal").classList.add("hidden");
+        }
+
+        function syncCourseWithDept() {
+            const dept = document.getElementById("inputDepartment").value;
+            // Dept automatically determines degree program
+        }
+
+        function handleSaveStudentSubmit(e) {
+            e.preventDefault();
+
+            const editId = document.getElementById("editStudentId").value;
+            const roll = document.getElementById("inputRollNo").value.trim().toUpperCase();
+            const name = document.getElementById("inputName").value.trim();
+            const dept = document.getElementById("inputDepartment").value;
+            const sem = parseInt(document.getElementById("inputSemester").value);
+            const pass = document.getElementById("inputStudentPassword").value.trim();
+            const email = document.getElementById("inputEmail").value.trim();
+            const phone = document.getElementById("inputPhone").value.trim();
+            const address = document.getElementById("inputAddress").value.trim();
+
+            let courseName = "BCA";
+            if (dept.includes("Management")) courseName = "BBA";
+            else if (dept.includes("Commerce")) courseName = "B.COM";
+            else if (dept.includes("Information")) courseName = "MCA";
+
+            if (editId) {
+                // UPDATE
+                const st = students.find(s => s.id === parseInt(editId));
+                if (st) {
+                    const changes = `Updated Name to '${name}', Phone to '${phone}', Sem to ${sem}, Dept to '${dept}'`;
+                    st.name = name;
+                    st.department = dept;
+                    st.course = courseName;
+                    st.semester = sem;
+                    st.password = pass;
+                    st.email = email;
+                    st.phone = phone;
+                    st.address = address;
+
+                    recordAuditLog("STUDENT_UPDATE", `${st.roll} (${st.name})`, changes);
+                    showToast(`Student record for ${st.roll} updated successfully!`, "success");
+                }
+            } else {
+                // INSERT
+                if (students.some(s => s.roll === roll)) {
+                    alert(`Roll No '${roll}' already registered in database!`);
+                    return;
+                }
+
+                const newStudent = {
+                    id: students.length + 1,
+                    roll: roll,
+                    password: pass,
+                    name: name,
+                    department: dept,
+                    course: courseName,
+                    semester: sem,
+                    email: email,
+                    phone: phone,
+                    address: address,
+                    feeStatus: "DUE",
+                    feePaid: 0,
+                    feeDue: 25000
+                };
+
+                students.push(newStudent);
+                recordAuditLog("STUDENT_REGISTRATION", `${newStudent.roll} (${newStudent.name})`, `Registered in ${dept}. Password assigned.`);
+                showToast(`New student ${name} enrolled successfully with ID: ${roll}!`, "success");
+            }
+
+            closeStudentFormModal();
+            renderEmployeeTable();
+            if (activeSession && activeSession.role === 'ADMIN') {
+                renderAuditLogsTable();
+            }
+        }
+
+        function deleteStudentAdmin(id) {
+            const st = students.find(s => s.id === id);
+            if (!st) return;
+
+            if (confirm(`ADMIN ACTION: Permanently remove student ${st.name} (${st.roll}) from database?`)) {
+                students = students.filter(s => s.id !== id);
+                recordAuditLog("RECORD_DELETION", `${st.roll} (${st.name})`, `Permanently deleted from database.`);
+                renderEmployeeTable();
+                renderAuditLogsTable();
+                showToast(`Student record ${st.roll} deleted by Admin.`, "info");
+            }
+        }
+
+        // ================= EMPLOYEE MANAGEMENT (ADMIN ONLY) =================
+
+        function openCreateEmployeeModal() {
+            document.getElementById("newEmpId").value = `EMP-10${employees.length + 1}`;
+            document.getElementById("newEmpName").value = "";
+            document.getElementById("newEmpPass").value = "staff123";
+            document.getElementById("createEmployeeModal").classList.remove("hidden");
+        }
+
+        function closeCreateEmployeeModal() {
+            document.getElementById("createEmployeeModal").classList.add("hidden");
+        }
+
+        function handleCreateEmployeeSubmit(e) {
+            e.preventDefault();
+            const id = document.getElementById("newEmpId").value.trim().toUpperCase();
+            const name = document.getElementById("newEmpName").value.trim();
+            const dept = document.getElementById("newEmpDept").value;
+            const pass = document.getElementById("newEmpPass").value.trim();
+
+            if (employees.some(em => em.id === id)) {
+                alert(`Employee ID ${id} already exists!`);
+                return;
+            }
+
+            const newEmp = {
+                id: id,
+                name: name,
+                department: dept,
+                password: pass,
+                role: "Academic Staff Officer"
+            };
+
+            employees.push(newEmp);
+            recordAuditLog("EMPLOYEE_AUTHORIZED", `${id} (${name})`, `Assigned to ${dept} with staff login privileges.`);
+            closeCreateEmployeeModal();
+            renderAdminEmployeesTable();
+            renderAuditLogsTable();
+            showToast(`Employee ${name} (${id}) authorized successfully!`, "success");
+        }
+
+        function removeEmployee(id) {
+            if (confirm(`ADMIN ACTION: Revoke staff access for ${id}?`)) {
+                employees = employees.filter(em => em.id !== id);
+                recordAuditLog("EMPLOYEE_REVOKED", id, "Staff login privileges revoked.");
+                renderAdminEmployeesTable();
+                renderAuditLogsTable();
+                showToast(`Staff access for ${id} revoked.`, "info");
+            }
+        }
+
+        // ================= UTILITIES & NAVIGATION =================
+
+        function hideAllViews() {
+            document.getElementById("viewLoginGateway").classList.add("hidden");
+            document.getElementById("viewStudentPortal").classList.add("hidden");
+            document.getElementById("viewEmployeePortal").classList.add("hidden");
+            document.getElementById("viewAdminPortal").classList.add("hidden");
+        }
+
+        function returnToPortalPicker() {
+            if (activeSession) {
+                if (confirm("Do you want to switch portals or sign out of your current session?")) {
+                    handleLogout();
+                }
+            } else {
+                hideAllViews();
+                document.getElementById("viewLoginGateway").classList.remove("hidden");
+            }
+        }
+
+        function handleLogout() {
+            activeSession = null;
+            currentStudentUser = null;
+            document.getElementById("activeSessionBar").classList.add("hidden");
+            hideAllViews();
+            document.getElementById("viewLoginGateway").classList.remove("hidden");
+            showToast("Signed out successfully. Select role to log in.", "info");
+        }
+
+        function printStudentSlip() {
+            window.print();
+        }
+
+        function exportToCSV() {
+            let csv = "ID,Roll No,Student Name,Department,Course,Semester,Email,Contact,Fee Status,Fee Paid,Fee Due,Login Password\n";
+            students.forEach(s => {
+                csv += `${s.id},"${s.roll}","${s.name}","${s.department}","${s.course}",${s.semester},"${s.email}","${s.phone}","${s.feeStatus}",${s.feePaid},${s.feeDue},"${s.password}"\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `students_database_export_${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            showToast("CSV Database roster exported successfully!", "success");
+        }
+    </script>
+</body>
+</html>
